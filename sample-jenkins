@@ -1,0 +1,37 @@
+pipeline {
+    environment {
+        CHECKOUT_TIMEOUT = '4'
+    }
+
+    agent { label 'DigxBuild' }
+    stages {
+        stage("Checkout") {
+            steps {
+                timeout(time: "${CHECKOUT_TIMEOUT}", unit: 'MINUTES') {
+                    checkout scm
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                sh """
+                export HTTP_PROXY=http.proxy.fmr.com:8000
+                export HTTPS_PROXY=http.proxy.fmr.com:8000
+                sudo sh cicd/aws/jenkins/release-scripts/build_docker_images.sh --APP_VERSION=${params.APP_VERSION}""" 
+            }
+        }
+        
+    }
+    post {
+        success {
+            println("Build Succeeded!")
+        }
+        failure {
+            println("FAILED")
+
+        }
+        aborted {
+            println("FAILED")
+        }
+    }
+}
